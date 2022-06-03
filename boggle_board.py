@@ -1,50 +1,59 @@
-import csv
-import string
-from random import randint
-
-GRID_WIDTH = 4
-GRID_HEIGHT = 4
-GRID_DEFAULT = "_"
-ALPHABET = string.ascii_uppercase
-DICE_FILE_PATH = "data/dice.csv"
+from classes.boggleBoard import BoggleBoard
+from classes.realTree import RealTrie as rt
 
 
-class BoggleBoard:
+def getNeighbors(i, j, board):
+    neighbors = []
+    if i > 0 and j > 0:
+        neighbors.append([i - 1, j - 1])
+    if i > 0 and j < len(board[0]) - 1:
+        neighbors.append([i - 1, j + 1])
+    if i < len(board) - 1 and j < len(board[0]) - 1:
+        neighbors.append([i + 1, j + 1])
+    if i < len(board) - 1 and j > 0:
+        neighbors.append([i + 1, j - 1])
+    if i > 0:
+        neighbors.append([i - 1, j])
+    if i < len(board) - 1:
+        neighbors.append([i + 1, j])
+    if j > 0:
+        neighbors.append([i, j - 1])
+    if j < len(board[0]) - 1:
+        neighbors.append([i, j + 1])
+    return neighbors
 
-    def __init__(self):
-        pass
 
-    def __str__(self):
-        print(ALPHABET)
-        grid = ""
-        for x in range(GRID_WIDTH):
-            for y in range(GRID_HEIGHT):
-                grid += GRID_DEFAULT
-            grid += "\n"
-        return grid
+def explore(i, j, board, trieNode, visited, finalWords):
+    if visited[i][j]:
+        return
+    letter = board[i][j]
+    if letter not in trieNode:
+        return
+    visited[i][j] = True
+    trieNode = trieNode[letter]
+    if "*" in trieNode:
+        print(f"Reached a * {trieNode}")
+        finalWords[trieNode["*"]] = True
+    neighbors = getNeighbors(i, j, board)
+    for neighbor in neighbors:
+        explore(neighbor[0], neighbor[1], board, trieNode, visited, finalWords)
+    visited[i][j] = False
 
-    def shake(self):
-        with open(DICE_FILE_PATH, newline='') as file:
-            rows_in_file = csv.DictReader(file)
-            rolled_letters = ""
-            for row in rows_in_file:
-                # print(row['dice'][randint(0, 5)])
-                rolled_letters += row['dice'][randint(0, 5)]
-            print(rolled_letters)
-            grid = ""
-            letter_tracker = 0
-            for x in range(GRID_WIDTH):
-                for y in range(GRID_HEIGHT):
-                    letter = rolled_letters[letter_tracker]
-                    if letter == "Q":
-                        letter += "u"
-                    grid += letter + "\t"
-                    letter_tracker += 1
-                grid += "\n"
-            return grid
+
+def start_boggle(board, words):
+    trie = rt()
+    for word in words:
+        trie.add(word)
+    finalWords = {}
+    visited = [[False for letter in row] for row in board]
+    for i in range(len(board)):
+        for j in range(len(board[i])):
+            explore(i, j, board, trie.root, visited, finalWords)
+    # print(f"LIST OF FINAL\n {list(finalWords.keys())}") #debug print
+    return list(finalWords.keys())
 
 
 b = BoggleBoard()
 print(b)
 print("SHAKE IT!\n")
-print(b.shake())
+start_boggle(b.shake(), ["ET", "EI", "OB", "ZI", "HU", "NF"])
